@@ -1,6 +1,6 @@
 # AI Lead Gen Agent
 
-An **agentic AI pipeline** that autonomously sources, qualifies, and converts Shopify store leads into personalised cold outreach emails — with zero human input between steps.
+An **agentic AI pipeline** that autonomously sources Italian e-commerce leads, validates each URL, scores them with an LLM, and writes personalised cold outreach emails — all in one CLI command.
 
 Built with **LangGraph**, **Groq (Llama 3.3-70b)**, and **Serper API**.
 
@@ -9,16 +9,18 @@ Built with **LangGraph**, **Groq (Llama 3.3-70b)**, and **Serper API**.
 ## How It Works
 
 ```
-Search (Serper API) → Score & Qualify (Groq LLM) → Generate Email (Groq LLM) → Save Results
+Search (Serper) → Validate Links (HTTP) → Score & Qualify (Groq LLM) → Generate Email (Groq LLM) → Save CSV
 ```
 
 Each step is an independent agent node in a **LangGraph StateGraph**. State flows through the graph automatically — no manual handoffs.
 
 | Agent | What it does |
 |---|---|
-| `lead_sourcer` | Queries Serper (Google Search API) and extracts up to 10 Shopify store leads |
-| `lead_qualifier` | Asks Groq LLM to score each lead 1–10 and filters out scores below 6 |
-| `email_generator` | Writes a personalised cold email per qualified lead referencing their niche |
+| `lead_sourcer` | Queries Serper (Google Search API) scoped to `site:.it`, returns up to 10 Italian e-commerce leads |
+| `link_validator` | Makes parallel HTTP HEAD/GET requests to each URL — drops any that are broken or unreachable |
+| `lead_qualifier` | Asks Groq LLM to score each live lead 1–5 and filters out scores below 2 |
+| `email_generator` | Writes a personalised cold email per qualified lead referencing their niche and the Italian market |
+| `save_results` | Writes a timestamped CSV to `output/` — never overwrites previous runs |
 
 ---
 
@@ -40,15 +42,16 @@ Each step is an independent agent node in a **LangGraph StateGraph**. State flow
 ```
 agentic-lead-gen/
 ├── agents/
-│   ├── lead_sourcer.py       # Serper API search → raw leads
-│   ├── lead_qualifier.py     # Groq LLM scoring + filtering
-│   └── email_generator.py    # Personalised cold email generation
+│   ├── lead_sourcer.py       # Serper API search → raw leads (site:.it)
+│   ├── link_validator.py     # Parallel HTTP validation — drops broken URLs
+│   ├── lead_qualifier.py     # Groq LLM scoring 1–5, filters score < 2
+│   └── email_generator.py    # Personalised cold email per qualified lead
 ├── core/
 │   ├── state.py              # Shared TypedDict state schema
-│   ├── graph.py              # LangGraph StateGraph definition
+│   ├── graph.py              # LangGraph StateGraph — 5 nodes + conditional edge
 │   └── config.py             # .env loader
-├── output/                   # JSON results (gitignored)
-├── main.py                   # Entry point
+├── output/                   # Timestamped CSVs saved here (gitignored)
+├── main.py                   # CLI entry point
 └── .env.example
 ```
 
@@ -73,11 +76,12 @@ cp .env.example .env
 
 **3. Run**
 ```bash
-# Default query
-.venv/bin/python main.py
+# Default query (Italian fashion stores)
+uv run python main.py
 
 # Custom query
-.venv/bin/python main.py "shopify store selling yoga mats"
+uv run python main.py "negozio online scarpe italia"
+uv run python main.py "ecommerce food italy"
 ```
 
 ---
@@ -86,38 +90,46 @@ cp .env.example .env
 
 ```
 === Agentic Lead Gen ===
-Query: shopify store selling fitness equipment
+Query: negozio online abbigliamento
 
-[lead_sourcer] Found 10 leads
-[lead_qualifier] The Fitness Outlet → score=8 (high)
-[lead_qualifier] 1/10 leads qualified
-[email_generator] Generated email for: The Fitness Outlet
-[save_results] Results saved to output/results.json
+[1/5] 🔍 Searching for leads...
+[lead_sourcer] Found 10 leads for query: 'negozio online abbigliamento site:.it'
+[2/5] 🔗 Validating links...
+  ✓ http://www.lovemoschino.it/
+  ✓ https://www.aboutyou.it/
+  ✓ https://www.antonia.it/
+  ✗ http://www.asos.it/
+  ✗ http://uniqlo.it/
+  7/10 links are live
+[3/5] 🧠 Qualifying leads with AI...
+[lead_qualifier] Moschino | Boutique Online → score=5 (high) [fashion]
+[lead_qualifier] Antonia Milano | Capi Esclusivi → score=5 (high) [fashion]
+[lead_qualifier] 7/7 leads qualified → keeping top 7
+[4/5] ✉️  Generating personalised emails...
+[email_generator] Generated email for: Moschino | Boutique Online
+[5/5] 💾 Saving results to CSV...
+    Saved 7 rows → output/results_20260515_201459.csv
 
-=== Summary ===
-  Leads sourced   : 10
-  Leads qualified : 1
-  Emails generated: 1
-  Status          : done
+✅ Done! 7 leads saved to output/results_20260515_201459.csv
 
-Subject: Boost Conversions for Your Fitness Equipment Store
-Body:
-Hi, I came across The Fitness Outlet and was impressed by the wide range of
-home and commercial gym equipment you offer. Our AI-powered product
-recommendation tool has helped similar Shopify stores drive significant
-revenue growth. Worth a quick 15-min chat?
-
-Alex from ConvertAI
+| #  | Company              | URL                        | Score | Priority | Subject                    |
+|----|----------------------|----------------------------|-------|----------|----------------------------|
+| 1  | Moschino | Boutique  | http://www.lovemoschino.it | 5     | high     | Boosting Revenue for Ital  |
+| 2  | Antonia Milano       | https://www.antonia.it/    | 5     | high     | Boost Sales for Antonia M  |
 ```
+
+**CSV columns:** `company_name`, `website_url`, `niche`, `lead_score`, `priority`, `reasoning`, `email_subject`, `email_body`
 
 ---
 
 ## Key Engineering Decisions
 
-- **LangGraph StateGraph** — chose graph-based orchestration over simple function chaining to make the pipeline extensible (new agent nodes can be inserted without touching existing ones)
-- **Pydantic for LLM output** — structured JSON responses validated at runtime, preventing silent failures from malformed LLM output
-- **Groq for inference** — sub-second LLM responses vs. 5–10s on other providers, critical for processing batches of leads
-- **Single shared state** — all agents read/write one `LeadGenState` TypedDict, making data flow explicit and debuggable
+- **Link validation before LLM** — HTTP check runs in parallel before any API calls, so Groq never wastes tokens on dead URLs
+- **LangGraph StateGraph** — graph-based orchestration makes the pipeline extensible; new agent nodes can be added without touching existing ones
+- **Conditional edge** — if Serper returns zero results the graph short-circuits to `END` with `status = "no_leads"`, skipping all LLM calls
+- **Pydantic for LLM output** — structured JSON responses validated at runtime, preventing silent failures from malformed output
+- **Groq for inference** — sub-second LLM responses vs. 5–10s on other providers, critical for scoring batches of leads
+- **Timestamped CSV output** — each run writes a new file, never overwrites previous results
 
 ---
 

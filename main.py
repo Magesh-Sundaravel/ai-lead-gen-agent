@@ -3,15 +3,43 @@ from core.config import get_serper_api_key, get_groq_api_key
 from core.state import LeadGenState
 from core.graph import app
 
-DEFAULT_QUERY = "shopify store selling fitness equipment"
+
+def _print_summary_table(emails: list[dict]) -> None:
+    if not emails:
+        return
+    rows = [
+        (
+            str(i + 1),
+            e["title"][:20],
+            e["url"][:30],
+            str(e["score"]),
+            e["priority"],
+            e["subject"][:25],
+        )
+        for i, e in enumerate(emails)
+    ]
+    col_w = [max(len(r[c]) for r in rows + [("#", "Company", "URL", "Score", "Priority", "Subject")]) for c in range(6)]
+    header = ("# ", "Company", "URL", "Score", "Priority", "Subject")
+    sep = "|-" + "-|-".join("-" * w for w in col_w) + "-|"
+    fmt = "| " + " | ".join(f"{{:<{w}}}" for w in col_w) + " |"
+
+    print()
+    print(fmt.format(*header))
+    print(sep)
+    for row in rows:
+        print(fmt.format(*row))
 
 
 def main() -> None:
-    # Validate keys up front so failures are obvious before any API calls
     get_serper_api_key()
     get_groq_api_key()
 
-    query = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_QUERY
+    if len(sys.argv) > 1:
+        query = sys.argv[1]
+    else:
+        query = input("Enter your lead search query [default: negozio online abbigliamento]: ").strip()
+        if not query:
+            query = "negozio online abbigliamento"
 
     print(f"\n=== Agentic Lead Gen ===")
     print(f"Query: {query}\n")
@@ -22,24 +50,23 @@ def main() -> None:
         "qualified_leads": [],
         "emails": [],
         "status": "init",
+        "csv_path": "",
     }
 
-    final_state = app.invoke(initial_state)
+    final_state: LeadGenState = initial_state
+    for chunk in app.stream(initial_state, stream_mode="updates"):
+        for node_name in chunk:
+            final_state = {**final_state, **chunk[node_name]}
 
-    print("\n=== Summary ===")
-    print(f"  Leads sourced   : {len(final_state['raw_leads'])}")
-    print(f"  Leads qualified : {len(final_state['qualified_leads'])}")
-    print(f"  Emails generated: {len(final_state['emails'])}")
-    print(f"  Status          : {final_state['status']}")
+    if final_state["status"] == "no_leads":
+        print("\nNo leads found for that query. Try a different search term.")
+        return
 
-    if final_state["emails"]:
-        print("\n--- Emails ---")
-        for email in final_state["emails"]:
-            print(f"\nTo     : {email['url']}")
-            print(f"Subject: {email['subject']}")
-            print(f"Body:\n{email['body']}")
+    csv_path = final_state.get("csv_path", "")
+    lead_count = len(final_state["emails"])
+    print(f"\n✅ Done! {lead_count} lead{'s' if lead_count != 1 else ''} saved to {csv_path}")
 
-    print("\nFull results saved to output/results.json")
+    _print_summary_table(final_state["emails"])
 
 
 if __name__ == "__main__":

@@ -14,10 +14,16 @@ class QualifiedLead(TypedDict):
     score: int
     reasoning: str
     priority: str
+    niche: str
 
 
 class Email(TypedDict):
+    title: str
     url: str
+    niche: str
+    score: int
+    priority: str
+    reasoning: str
     subject: str
     body: str
 
@@ -28,3 +34,4 @@ class LeadGenState(TypedDict):
     qualified_leads: list[QualifiedLead]
     emails: list[Email]
     status: str
+    csv_path: str
