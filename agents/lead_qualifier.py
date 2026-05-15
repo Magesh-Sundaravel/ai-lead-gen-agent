@@ -11,6 +11,7 @@ class LeadScore(BaseModel):
     score: int
     reasoning: str
     priority: str
+    niche: str
 
 
 def _score_lead(client: Groq, lead: RawLead) -> LeadScore:
@@ -31,7 +32,7 @@ Score this lead from 1 to 10:
 Also assign a priority: "high", "medium", or "low".
 
 Respond with JSON matching this schema exactly:
-{{"score": <int 1-10>, "reasoning": "<one sentence>", "priority": "<high|medium|low>"}}"""
+{{"score": <int 1-10>, "reasoning": "<one sentence>", "priority": "<high|medium|low>", "niche": "<product category e.g. fitness, fashion, pet supplies>"}}"""
 
     response = client.chat.completions.create(
         model=MODEL,
@@ -50,13 +51,14 @@ def qualify_leads(state: LeadGenState) -> LeadGenState:
 
     for lead in state["raw_leads"]:
         scored = _score_lead(client, lead)
-        print(f"[lead_qualifier] {lead['title'][:50]} → score={scored.score} ({scored.priority})")
+        print(f"[lead_qualifier] {lead['title'][:50]} → score={scored.score} ({scored.priority}) [{scored.niche}]")
         if scored.score >= SCORE_THRESHOLD:
             qualified.append({
                 **lead,
                 "score": scored.score,
                 "reasoning": scored.reasoning,
                 "priority": scored.priority,
+                "niche": scored.niche,
             })
 
     print(f"[lead_qualifier] {len(qualified)}/{len(state['raw_leads'])} leads qualified")
