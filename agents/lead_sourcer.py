@@ -8,7 +8,7 @@ SERPER_URL = "https://google.serper.dev/search"
 def source_leads(state: LeadGenState) -> LeadGenState:
     print("[1/4] 🔍 Searching for leads...")
     query = state["query"]
-    scoped_query = f"{query} site:myshopify.com"
+    scoped_query = f"{query} site:.it"
     headers = {
         "X-API-KEY": get_serper_api_key(),
         "Content-Type": "application/json",

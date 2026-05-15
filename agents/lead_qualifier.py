@@ -15,20 +15,20 @@ class LeadScore(BaseModel):
 
 
 def _score_lead(client: Groq, lead: RawLead) -> LeadScore:
-    prompt = f"""You are a B2B lead qualification expert.
+    prompt = f"""You are a B2B lead qualification expert targeting Italian e-commerce businesses.
 
-Evaluate this search result as a potential Shopify store owner to cold-email.
+Evaluate this search result as a potential Italian e-commerce business to cold-email.
 
 Title: {lead['title']}
 URL: {lead['url']}
 Snippet: {lead['snippet']}
 
 Score this lead from 1 to 5 (5 is highest priority):
-- 5: Clearly an active e-commerce store selling products in Italy (ideal target)
-- 4: Likely a real Italian store but slightly less certain
-- 3: Possibly relevant — may be an Italian store or sell to Italian market
-- 2: Unclear or only loosely relevant
-- 1: Directories, blog posts, agencies, or irrelevant pages
+- 5: Clearly an active Italian e-commerce store with its own products and online sales (ideal target)
+- 4: Likely a real Italian online store, slightly less certain
+- 3: Possibly an Italian e-commerce business but mixed signals
+- 2: Loosely relevant — marketplace seller, reseller, or unclear
+- 1: Blog, directory, news article, agency, or not an e-commerce store
 
 Also assign a priority: "high" (score 5), "medium" (score 3–4), or "low" (score 1–2).
 
