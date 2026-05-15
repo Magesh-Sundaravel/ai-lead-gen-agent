@@ -4,7 +4,7 @@ from core.config import get_groq_api_key
 from core.state import LeadGenState, RawLead, QualifiedLead
 
 MODEL = "llama-3.3-70b-versatile"
-SCORE_THRESHOLD = 6
+SCORE_THRESHOLD = 3
 
 
 class LeadScore(BaseModel):
@@ -23,16 +23,17 @@ Title: {lead['title']}
 URL: {lead['url']}
 Snippet: {lead['snippet']}
 
-Score this lead from 1 to 10:
-- 8-10: Clearly an active Shopify store selling products (ideal target)
-- 6-7: Likely a real store but less certain
-- 4-5: Possibly relevant but unclear
-- 1-3: Directories, blog posts, agencies, or irrelevant pages
+Score this lead from 1 to 5 (5 is highest priority):
+- 5: Clearly an active e-commerce store selling products in Italy (ideal target)
+- 4: Likely a real Italian store but slightly less certain
+- 3: Possibly relevant — may be an Italian store or sell to Italian market
+- 2: Unclear or only loosely relevant
+- 1: Directories, blog posts, agencies, or irrelevant pages
 
-Also assign a priority: "high", "medium", or "low".
+Also assign a priority: "high" (score 5), "medium" (score 3–4), or "low" (score 1–2).
 
 Respond with JSON matching this schema exactly:
-{{"score": <int 1-10>, "reasoning": "<one sentence>", "priority": "<high|medium|low>", "niche": "<product category e.g. fitness, fashion, pet supplies>"}}"""
+{{"score": <int 1-5>, "reasoning": "<one sentence>", "priority": "<high|medium|low>", "niche": "<product category e.g. fashion, food, electronics, home decor>"}}"""
 
     response = client.chat.completions.create(
         model=MODEL,
@@ -62,5 +63,6 @@ def qualify_leads(state: LeadGenState) -> LeadGenState:
                 "niche": scored.niche,
             })
 
-    print(f"[lead_qualifier] {len(qualified)}/{len(state['raw_leads'])} leads qualified")
-    return {**state, "qualified_leads": qualified, "status": "leads_qualified"}
+    top10 = sorted(qualified, key=lambda x: x["score"], reverse=True)[:10]
+    print(f"[lead_qualifier] {len(qualified)}/{len(state['raw_leads'])} leads qualified → keeping top {len(top10)}")
+    return {**state, "qualified_leads": top10, "status": "leads_qualified"}

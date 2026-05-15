@@ -13,7 +13,7 @@ def source_leads(state: LeadGenState) -> LeadGenState:
         "X-API-KEY": get_serper_api_key(),
         "Content-Type": "application/json",
     }
-    payload = {"q": scoped_query, "num": 10}
+    payload = {"q": scoped_query, "num": 20}
 
     response = requests.post(SERPER_URL, json=payload, headers=headers, timeout=10)
     response.raise_for_status()
@@ -26,7 +26,7 @@ def source_leads(state: LeadGenState) -> LeadGenState:
             "url": result.get("link", ""),
             "snippet": result.get("snippet", ""),
         }
-        for result in organic[:10]
+        for result in organic[:20]
     ]
 
     print(f"[lead_sourcer] Found {len(raw_leads)} leads for query: '{scoped_query}'")

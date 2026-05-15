@@ -37,10 +37,9 @@ def main() -> None:
     if len(sys.argv) > 1:
         query = sys.argv[1]
     else:
-        query = input("Enter your lead search query: ").strip()
+        query = input("Enter your lead search query [default: negozio ecommerce italia]: ").strip()
         if not query:
-            print("No query provided. Exiting.")
-            return
+            query = "negozio ecommerce italia"
 
     print(f"\n=== Agentic Lead Gen ===")
     print(f"Query: {query}\n")
