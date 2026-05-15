@@ -18,7 +18,12 @@ class QualifiedLead(TypedDict):
 
 
 class Email(TypedDict):
+    title: str
     url: str
+    niche: str
+    score: int
+    priority: str
+    reasoning: str
     subject: str
     body: str
 

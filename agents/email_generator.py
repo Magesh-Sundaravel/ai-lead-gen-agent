@@ -18,6 +18,7 @@ Write a short, personalised cold email to the owner of this Shopify store.
 
 Store name: {lead['title']}
 Store URL: {lead['url']}
+Niche: {lead['niche']}
 Description: {lead['snippet']}
 Lead score: {lead['score']}/10
 Priority: {lead['priority']}
@@ -53,7 +54,12 @@ def generate_emails(state: LeadGenState) -> LeadGenState:
         draft = _generate_email(client, lead)
         print(f"[email_generator] Generated email for: {lead['title'][:50]}")
         emails.append({
+            "title": lead["title"],
             "url": lead["url"],
+            "niche": lead["niche"],
+            "score": lead["score"],
+            "priority": lead["priority"],
+            "reasoning": lead["reasoning"],
             "subject": draft.subject,
             "body": draft.body,
         })
