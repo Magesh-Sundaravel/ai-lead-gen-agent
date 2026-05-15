@@ -6,7 +6,7 @@ SERPER_URL = "https://google.serper.dev/search"
 
 
 def source_leads(state: LeadGenState) -> LeadGenState:
-    print("[1/4] 🔍 Searching for leads...")
+    print("[1/5] 🔍 Searching for leads...")
     query = state["query"]
     scoped_query = f"{query} site:.it"
     headers = {

@@ -4,6 +4,7 @@ from datetime import datetime
 from langgraph.graph import StateGraph, END
 from core.state import LeadGenState
 from agents.lead_sourcer import source_leads
+from agents.link_validator import validate_links
 from agents.lead_qualifier import qualify_leads
 from agents.email_generator import generate_emails
 
@@ -24,7 +25,7 @@ def _route_after_source(state: LeadGenState) -> str:
 
 
 def save_results(state: LeadGenState) -> LeadGenState:
-    print("[4/4] 💾 Saving results to CSV...")
+    print("[5/5] 💾 Saving results to CSV...")
     if not state["emails"]:
         return {**state, "status": "no_emails", "csv_path": ""}
 
@@ -55,12 +56,14 @@ def build_graph() -> StateGraph:
     graph = StateGraph(LeadGenState)
 
     graph.add_node("source", source_leads)
+    graph.add_node("validate_links", validate_links)
     graph.add_node("qualify", qualify_leads)
     graph.add_node("generate_emails", generate_emails)
     graph.add_node("save_results", save_results)
 
     graph.set_entry_point("source")
-    graph.add_conditional_edges("source", _route_after_source, {"qualify": "qualify", END: END})
+    graph.add_conditional_edges("source", _route_after_source, {"qualify": "validate_links", END: END})
+    graph.add_edge("validate_links", "qualify")
     graph.add_edge("qualify", "generate_emails")
     graph.add_edge("generate_emails", "save_results")
     graph.add_edge("save_results", END)

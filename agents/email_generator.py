@@ -48,7 +48,7 @@ Respond with JSON matching this schema exactly:
 
 
 def generate_emails(state: LeadGenState) -> LeadGenState:
-    print("[3/4] ✉️  Generating personalised emails...")
+    print("[4/5] ✉️  Generating personalised emails...")
     client = Groq(api_key=get_groq_api_key())
     emails: list[Email] = []
 
