@@ -14,6 +14,7 @@ class QualifiedLead(TypedDict):
     score: int
     reasoning: str
     priority: str
+    niche: str
 
 
 class Email(TypedDict):
