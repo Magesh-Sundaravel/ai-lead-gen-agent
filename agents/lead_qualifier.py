@@ -46,6 +46,7 @@ Respond with JSON matching this schema exactly:
 
 
 def qualify_leads(state: LeadGenState) -> LeadGenState:
+    print("[2/4] 🧠 Qualifying leads with AI...")
     client = Groq(api_key=get_groq_api_key())
     qualified: list[QualifiedLead] = []
 

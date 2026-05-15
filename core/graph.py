@@ -24,6 +24,7 @@ def _route_after_source(state: LeadGenState) -> str:
 
 
 def save_results(state: LeadGenState) -> LeadGenState:
+    print("[4/4] 💾 Saving results to CSV...")
     if not state["emails"]:
         return {**state, "status": "no_emails", "csv_path": ""}
 
@@ -46,7 +47,7 @@ def save_results(state: LeadGenState) -> LeadGenState:
                 "email_body": email["body"].replace("\n", "\\n"),
             })
 
-    print(f"[save_results] Saved {len(state['emails'])} rows → {path}")
+    print(f"    Saved {len(state['emails'])} rows → {path}")
     return {**state, "status": "done", "csv_path": path}
 
 

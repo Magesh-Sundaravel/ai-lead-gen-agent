@@ -3,13 +3,6 @@ from core.config import get_serper_api_key, get_groq_api_key
 from core.state import LeadGenState
 from core.graph import app
 
-_STEP_BANNERS = {
-    "source": "[1/4] 🔍 Searching for leads...",
-    "qualify": "[2/4] 🧠 Qualifying leads with AI...",
-    "generate_emails": "[3/4] ✉️  Generating personalised emails...",
-    "save_results": "[4/4] 💾 Saving results to CSV...",
-}
-
 
 def _print_summary_table(emails: list[dict]) -> None:
     if not emails:
@@ -64,8 +57,6 @@ def main() -> None:
     final_state: LeadGenState = initial_state
     for chunk in app.stream(initial_state, stream_mode="updates"):
         for node_name in chunk:
-            if node_name in _STEP_BANNERS:
-                print(_STEP_BANNERS[node_name])
             final_state = {**final_state, **chunk[node_name]}
 
     if final_state["status"] == "no_leads":
