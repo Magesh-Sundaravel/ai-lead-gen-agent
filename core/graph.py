@@ -11,10 +11,11 @@ OUTPUT_PATH = "output/results.json"
 
 def save_results(state: LeadGenState) -> LeadGenState:
     os.makedirs("output", exist_ok=True)
+    final = {**state, "status": "done"}
     with open(OUTPUT_PATH, "w") as f:
-        json.dump(state, f, indent=2)
+        json.dump(final, f, indent=2)
     print(f"[save_results] Results saved to {OUTPUT_PATH}")
-    return {**state, "status": "done"}
+    return final
 
 
 def build_graph() -> StateGraph:
