@@ -34,3 +34,4 @@ class LeadGenState(TypedDict):
     qualified_leads: list[QualifiedLead]
     emails: list[Email]
     status: str
+    csv_path: str
