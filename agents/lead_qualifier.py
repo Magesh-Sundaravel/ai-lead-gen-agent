@@ -4,7 +4,7 @@ from core.config import get_groq_api_key
 from core.state import LeadGenState, RawLead, QualifiedLead
 
 MODEL = "llama-3.3-70b-versatile"
-SCORE_THRESHOLD = 3
+SCORE_THRESHOLD = 2
 
 
 class LeadScore(BaseModel):
